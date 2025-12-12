@@ -4,6 +4,7 @@ const KEY_ENABLED = "netbarEnabled";
 const KEY_OPACITY = "netbarOpacity";
 const KEY_DISABLED_SITES = "netbarDisabledSites";
 const KEY_POSITION = "netbarPosition"; // "top" or "bottom"
+const KEY_GHOST_MODE = "netbarGhostMode";
 const BAR_ID = "__site_netbar__";
 
 const C = {
@@ -25,7 +26,8 @@ let state = {
   enabled: true,
   opacity: 100,
   position: "top", // "top" | "bottom"
-  disabledSites: [] // array of hostnames
+  disabledSites: [], // array of hostnames
+  ghostMode: false
 };
 
 async function loadState() {
@@ -33,13 +35,15 @@ async function loadState() {
     [KEY_ENABLED]: true,
     [KEY_OPACITY]: 100,
     [KEY_POSITION]: "top",
-    [KEY_DISABLED_SITES]: []
+    [KEY_DISABLED_SITES]: [],
+    [KEY_GHOST_MODE]: false
   });
 
   state.enabled = !!r[KEY_ENABLED];
   state.opacity = parseInt(r[KEY_OPACITY]) || 100;
   state.position = r[KEY_POSITION] === "bottom" ? "bottom" : "top";
   state.disabledSites = Array.isArray(r[KEY_DISABLED_SITES]) ? r[KEY_DISABLED_SITES] : [];
+  state.ghostMode = !!r[KEY_GHOST_MODE];
 }
 
 function isSiteDisabled() {
@@ -91,6 +95,7 @@ function ensureBar() {
     controls.style.display = "flex";
     controls.style.gap = "8px";
     controls.style.alignItems = "center";
+    controls.style.pointerEvents = "auto"; // Ensure controls are always clickable
 
     // Up Button
     const btnUp = document.createElement("span");
@@ -146,6 +151,9 @@ function updateBarStyles(bar) {
 
   // Opacity
   bar.style.opacity = state.opacity / 100;
+
+  // Ghost Mode (Click-through)
+  bar.style.pointerEvents = state.ghostMode ? "none" : "auto";
 
   // Position
   if (state.position === "bottom") {
@@ -257,6 +265,7 @@ chrome.runtime.onMessage.addListener((msg) => {
     if (msg.enabled !== undefined) state.enabled = msg.enabled;
     if (msg.opacity !== undefined) state.opacity = msg.opacity;
     if (msg.disabledSites !== undefined) state.disabledSites = msg.disabledSites;
+    if (msg.ghostMode !== undefined) state.ghostMode = msg.ghostMode;
 
     refresh();
     const bar = document.getElementById(BAR_ID);
@@ -299,6 +308,10 @@ chrome.storage.onChanged.addListener((changes, area) => {
   }
   if (changes[KEY_POSITION]) {
     state.position = changes[KEY_POSITION].newValue || "top";
+    changed = true;
+  }
+  if (changes[KEY_GHOST_MODE]) {
+    state.ghostMode = !!changes[KEY_GHOST_MODE].newValue;
     changed = true;
   }
 

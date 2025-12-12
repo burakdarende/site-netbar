@@ -1,17 +1,20 @@
 const KEY_ENABLED = "netbarEnabled";
 const KEY_OPACITY = "netbarOpacity";
 const KEY_DISABLED_SITES = "netbarDisabledSites";
+const KEY_GHOST_MODE = "netbarGhostMode";
 
 async function getState() {
   const r = await chrome.storage.sync.get({
     [KEY_ENABLED]: true,
     [KEY_OPACITY]: 100,
-    [KEY_DISABLED_SITES]: []
+    [KEY_DISABLED_SITES]: [],
+    [KEY_GHOST_MODE]: false
   });
   return {
     enabled: !!r[KEY_ENABLED],
     opacity: parseInt(r[KEY_OPACITY]) || 100,
-    disabledSites: Array.isArray(r[KEY_DISABLED_SITES]) ? r[KEY_DISABLED_SITES] : []
+    disabledSites: Array.isArray(r[KEY_DISABLED_SITES]) ? r[KEY_DISABLED_SITES] : [],
+    ghostMode: !!r[KEY_GHOST_MODE]
   };
 }
 
@@ -20,6 +23,7 @@ async function saveState(state) {
   if (state.enabled !== undefined) update[KEY_ENABLED] = state.enabled;
   if (state.opacity !== undefined) update[KEY_OPACITY] = state.opacity;
   if (state.disabledSites !== undefined) update[KEY_DISABLED_SITES] = state.disabledSites;
+  if (state.ghostMode !== undefined) update[KEY_GHOST_MODE] = state.ghostMode;
   await chrome.storage.sync.set(update);
 }
 
@@ -43,6 +47,7 @@ async function sendStateToTab(state) {
 (async () => {
   const toggle = document.getElementById("toggle");
   const siteToggle = document.getElementById("siteToggle");
+  const ghostToggle = document.getElementById("ghostToggle");
   const opacity = document.getElementById("opacity");
   const opacityVal = document.getElementById("opacityVal");
   const currentDomainEl = document.getElementById("currentDomain");
@@ -62,6 +67,7 @@ async function sendStateToTab(state) {
   toggle.checked = state.enabled;
   opacity.value = state.opacity;
   opacityVal.textContent = `${state.opacity}%`;
+  ghostToggle.checked = state.ghostMode;
 
   const isSiteDisabled = state.disabledSites.includes(hostname);
   siteToggle.checked = !isSiteDisabled; // Checked means ENABLED
@@ -72,6 +78,12 @@ async function sendStateToTab(state) {
     const v = toggle.checked;
     await saveState({ enabled: v });
     await sendStateToTab({ enabled: v });
+  });
+
+  ghostToggle.addEventListener("change", async () => {
+    const v = ghostToggle.checked;
+    await saveState({ ghostMode: v });
+    await sendStateToTab({ ghostMode: v });
   });
 
   siteToggle.addEventListener("change", async () => {

@@ -1,0 +1,28 @@
+{
+  "manifest_version": 3,
+  "name": "Site NetBar (IP/NS/Country/Host)",
+  "version": "1.1.1",
+  "description": "Shows website IP, NS, hostname (PTR), client IP and Server header as a fixed top bar. Includes popup toggle.",
+  "permissions": ["tabs", "storage", "webRequest"],
+  "host_permissions": [
+    "<all_urls>",
+    "https://cloudflare-dns.com/*",
+    "https://dns.google/*",
+    "https://ipapi.co/*",
+    "https://api.ipify.org/*"
+  ],
+  "action": {
+    "default_title": "NetBar",
+    "default_popup": "popup.html"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}
